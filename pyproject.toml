@@ -1,0 +1,19 @@
+[project]
+name = "tickets"
+version = "0.1.0"
+description = "Add your description here"
+requires-python = ">=3.12"
+dependencies = [
+    "apscheduler>=3.11.0",
+    "flask>=3.1.2",
+    "playwright>=1.55.0",
+    "pyyaml>=6.0.3",
+    "sqlalchemy>=2.0.44",
+]
+
+[tool.uv]
+dev-dependencies = [
+    "pytest>=8.4.2",
+    "pytest-asyncio>=1.2.0",
+    "pytest-mock>=3.15.1",
+]
