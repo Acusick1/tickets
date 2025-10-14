@@ -1,4 +1,4 @@
-name: Daily Scraper Health Check
+name: Health check
 
 on:
   # Run daily at 9:00 AM UTC
