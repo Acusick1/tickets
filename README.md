@@ -67,19 +67,6 @@ alerts:
     active: true
 ```
 
-### 3. Verify Setup
-
-```bash
-# Verify all dependencies and configuration
-uv run python verify_setup.py
-```
-
-This will check:
-
-- All required files are present
-- Dependencies are installed
-- Configuration files exist
-
 ### 4. Run the Application
 
 ```bash
