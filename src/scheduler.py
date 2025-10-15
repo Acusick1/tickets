@@ -66,9 +66,10 @@ class AlertScheduler:
         self.scheduler.start()
         logger.info("Scheduler started")
 
-        # Run immediately on start
+        # Run immediately on start without jitter (fail fast)
         logger.info("Running initial alert check...")
-        self._process_with_jitter()
+        stats = self.alert_manager.process_all_alerts()
+        logger.info(f"Initial alert check completed: {stats}")
 
     def stop(self):
         """Stop the scheduler."""

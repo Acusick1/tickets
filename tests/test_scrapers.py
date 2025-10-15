@@ -1,6 +1,7 @@
 """Tests for scrapers."""
 
 from src.scrapers import StubHubScraper, TicketmasterScraper, ViagogoScraper
+from src.scrapers.base import ScrapeResult
 
 
 class TestBaseScraper:
@@ -44,9 +45,10 @@ class TestTicketmasterScraper:
             result = scraper.scrape("https://www.ticketmaster.com/test")
 
         assert result is not None
-        assert "price" in result
-        assert "availability" in result
-        assert "raw_data" in result
+        assert isinstance(result, ScrapeResult)
+        assert result.price is not None
+        assert result.availability is not None
+        assert result.raw_data is not None
 
     def test_scrape_sold_out(self, mocker, mock_playwright):
         """Test sold out detection."""
@@ -61,7 +63,7 @@ class TestTicketmasterScraper:
         with scraper:
             result = scraper.scrape("https://www.ticketmaster.com/test")
 
-        assert result["availability"] == "sold_out"
+        assert result.availability == "sold_out"
 
 
 class TestStubHubScraper:
@@ -80,8 +82,9 @@ class TestStubHubScraper:
             result = scraper.scrape("https://www.stubhub.com/test")
 
         assert result is not None
-        assert "price" in result
-        assert "availability" in result
+        assert isinstance(result, ScrapeResult)
+        assert result.price is not None
+        assert result.availability is not None
 
     def test_scrape_no_tickets(self, mocker, mock_playwright):
         """Test no tickets available detection."""
@@ -93,7 +96,7 @@ class TestStubHubScraper:
         with scraper:
             result = scraper.scrape("https://www.stubhub.com/test")
 
-        assert result["availability"] == "sold_out"
+        assert result.availability == "sold_out"
 
 
 class TestViagogoScraper:
@@ -112,11 +115,12 @@ class TestViagogoScraper:
             result = scraper.scrape("https://www.viagogo.com/test")
 
         assert result is not None
-        assert "price" in result
-        assert "availability" in result
+        assert isinstance(result, ScrapeResult)
+        assert result.price is not None
+        assert result.availability is not None
 
     def test_scrape_with_retry(self, mocker, mock_playwright):
-        """Test retry logic."""
+        """Test retry logic with tenacity."""
         mock_element = mocker.MagicMock()
         mock_element.inner_text.return_value = "€99.99"
         mock_playwright.query_selector_all.return_value = [mock_element]
@@ -125,9 +129,8 @@ class TestViagogoScraper:
         scraper = ViagogoScraper(headless=True)
 
         with scraper:
-            result = scraper.scrape_with_retry(
-                "https://www.viagogo.com/test", max_retries=2, retry_delay=0.1
-            )
+            result = scraper.scrape_with_retry("https://www.viagogo.com/test")
 
         assert result is not None
-        assert "price" in result
+        assert isinstance(result, ScrapeResult)
+        assert result.price is not None

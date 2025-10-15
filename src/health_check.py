@@ -75,27 +75,22 @@ class ScraperHealthChecker:
             with scraper:
                 result = scraper.scrape(url)
 
-                # Check if we got a valid result
-                if result and isinstance(result, dict):
-                    price_value = result.get("price")
-                    availability = result.get("availability")
-                    raw_data = result.get("raw_data", {})
-                    currency = raw_data.get("currency")
+                # Extract data from ScrapeResult
+                price_value = result.price
+                availability = result.availability
+                currency = result.raw_data.currency
 
-                    if price_value is not None and price_value > 0:
-                        price_extracted = True
-                        success = True
-                        logger.info(
-                            f"✅ {scraper_name} health check passed: "
-                            f"Price={price_value} {currency or ''}, "
-                            f"Availability={availability}"
-                        )
-                    else:
-                        error_message = "Price is None or zero"
-                        logger.warning(f"⚠️  {scraper_name} returned no valid price")
+                if price_value is not None and price_value > 0:
+                    price_extracted = True
+                    success = True
+                    logger.info(
+                        f"✅ {scraper_name} health check passed: "
+                        f"Price={price_value} {currency or ''}, "
+                        f"Availability={availability}"
+                    )
                 else:
-                    error_message = "Scraper returned invalid result format"
-                    logger.warning(f"⚠️  {scraper_name} returned invalid result")
+                    error_message = "Price is None or zero"
+                    logger.warning(f"⚠️  {scraper_name} returned no valid price")
 
         except Exception as e:
             error_message = str(e)
