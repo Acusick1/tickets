@@ -108,11 +108,16 @@ def mock_notifier(mocker):
 @pytest.fixture
 def mock_scraper_result():
     """Provide a mock scraper result."""
-    return {
-        "price": 89.99,
-        "availability": "available",
-        "raw_data": {"page_title": "Test Event", "url": "https://test.com"},
-    }
+    from src.scrapers.base import ScrapeResult, RawScrapeData
+
+    raw_data = RawScrapeData(
+        url="https://test.com",
+        page_title="Test Event",
+        price_text="$89.99",
+        currency="USD",
+    )
+
+    return ScrapeResult(price=89.99, availability="available", raw_data=raw_data)
 
 
 @pytest.fixture
@@ -185,19 +190,28 @@ def mock_playwright(mocker):
     """Mock Playwright browser for scraper testing."""
     mock_page = mocker.MagicMock()
     mock_page.goto.return_value = None
-    mock_page.wait_for_selector.return_value = None
-    mock_page.inner_text.return_value = "Test Page Content $50"
+    mock_page.wait_for_timeout.return_value = None
+    mock_page.evaluate.return_value = None
+    mock_page.inner_text.return_value = "Test Page Content $50.00"
+    mock_page.content.return_value = "<html>Test Page Content $50.00</html>"
     mock_page.title.return_value = "Test Event"
 
+    mock_context = mocker.MagicMock()
+    mock_context.new_page.return_value = mock_page
+
     mock_browser = mocker.MagicMock()
-    mock_browser.new_context.return_value.new_page.return_value = mock_page
+    mock_browser.new_context.return_value = mock_context
+    mock_browser.close.return_value = None
 
     mock_playwright_obj = mocker.MagicMock()
     mock_playwright_obj.chromium.launch.return_value = mock_browser
+    mock_playwright_obj.stop.return_value = None
 
     mocker.patch(
         "src.scrapers.base.sync_playwright",
-        return_value=mocker.MagicMock(start=lambda: mock_playwright_obj),
+        return_value=mocker.MagicMock(
+            start=mocker.MagicMock(return_value=mock_playwright_obj)
+        ),
     )
 
     return mock_page

@@ -88,8 +88,9 @@ class TestStubHubScraper:
 
     def test_scrape_no_tickets(self, mocker, mock_playwright):
         """Test no tickets available detection."""
-        mock_playwright.query_selector_all.return_value = []
+        # Override the fixture to return sold out message without price
         mock_playwright.inner_text.return_value = "no tickets available"
+        mock_playwright.content.return_value = "<html>no tickets available</html>"
 
         scraper = StubHubScraper(headless=True)
 
@@ -97,6 +98,7 @@ class TestStubHubScraper:
             result = scraper.scrape("https://www.stubhub.com/test")
 
         assert result.availability == "sold_out"
+        assert result.price is None
 
 
 class TestViagogoScraper:
