@@ -25,6 +25,22 @@ class RawScrapeData:
     all_prices_found: Optional[List[str]] = None
     error: Optional[str] = None
 
+    def asdict(self) -> dict:
+        """Convert to dictionary for JSON serialization."""
+        result = {
+            "url": self.url,
+            "page_title": self.page_title,
+        }
+        if self.price_text is not None:
+            result["price_text"] = self.price_text
+        if self.currency is not None:
+            result["currency"] = self.currency
+        if self.all_prices_found is not None:
+            result["all_prices_found"] = self.all_prices_found
+        if self.error is not None:
+            result["error"] = self.error
+        return result
+
 
 @dataclass
 class ScrapeResult:
@@ -33,6 +49,14 @@ class ScrapeResult:
     price: Optional[float]
     availability: str
     raw_data: RawScrapeData
+
+    def asdict(self) -> dict:
+        """Convert to dictionary for JSON serialization."""
+        return {
+            "price": self.price,
+            "availability": self.availability,
+            "raw_data": self.raw_data.asdict(),
+        }
 
 
 @dataclass
