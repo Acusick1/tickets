@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from .models import Alert, NotificationLog, PriceRecord
 from .notifier import EmailNotifier
 from .scrapers import StubHubScraper, TicketmasterScraper, ViagogoScraper
-from .scrapers.base import BaseScraper
+from .scrapers.base import BaseScraper, ScrapeResult
 
 logger = logging.getLogger(__name__)
 
@@ -54,6 +54,33 @@ class AlertManager:
 
         return scraper_class(**self.scraper_config)
 
+    def _raw_data_to_dict(self, result: ScrapeResult) -> Dict:
+        """Convert RawScrapeData to dictionary for database storage.
+
+        Args:
+            result: ScrapeResult containing raw_data
+
+        Returns:
+            Dictionary representation of raw data
+        """
+        raw_data = result.raw_data
+        data_dict = {
+            "url": raw_data.url,
+            "page_title": raw_data.page_title,
+        }
+
+        # Add optional fields if they exist
+        if raw_data.price_text:
+            data_dict["price_text"] = raw_data.price_text
+        if raw_data.currency:
+            data_dict["currency"] = raw_data.currency
+        if raw_data.all_prices_found:
+            data_dict["all_prices_found"] = raw_data.all_prices_found
+        if raw_data.error:
+            data_dict["error"] = raw_data.error
+
+        return data_dict
+
     def process_alert(self, alert: Alert) -> bool:
         """Process a single alert: scrape, store, and notify if needed.
 
@@ -71,11 +98,11 @@ class AlertManager:
 
             # Scrape the price with retry
             with scraper:
-                result = scraper.scrape_with_retry(alert.source_url)
+                result: ScrapeResult = scraper.scrape_with_retry(alert.source_url)
 
-            current_price = result.get("price")
-            availability = result.get("availability")
-            raw_data = result.get("raw_data", {})
+            current_price = result.price
+            availability = result.availability
+            raw_data_dict = self._raw_data_to_dict(result)
 
             # Update alert's last_checked timestamp
             alert.last_checked = datetime.now()
@@ -86,7 +113,7 @@ class AlertManager:
                     alert_id=alert.id,
                     price=current_price,
                     availability=availability,
-                    raw_data=raw_data,
+                    raw_data=raw_data_dict,
                 )
                 self.db_session.add(price_record)
 
