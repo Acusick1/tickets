@@ -30,22 +30,34 @@ class AlertScheduler:
         self.alert_manager = alert_manager
         self.interval_minutes = interval_minutes
         self.jitter_minutes = jitter_minutes
-        self.scheduler = BackgroundScheduler()
+        # Configure scheduler with misfire grace time to handle jitter delays
+        self.scheduler = BackgroundScheduler(
+            job_defaults={
+                'coalesce': False,  # Run all missed jobs
+                'max_instances': 1,  # Only one instance at a time
+                'misfire_grace_time': jitter_minutes * 60 + 60  # Grace time for jitter + buffer
+            }
+        )
         self.job_id = "process_alerts"
 
     def _process_with_jitter(self):
         """Process alerts with random jitter."""
+        logger.info("=" * 60)
+        logger.info("Scheduled job triggered")
+
         # Add random delay (jitter) to avoid detection patterns
         if self.jitter_minutes > 0:
             jitter_seconds = random.uniform(0, self.jitter_minutes * 60)
-            logger.info(f"Adding jitter: {jitter_seconds:.2f} seconds")
+            logger.info(f"Adding jitter: {jitter_seconds:.2f} seconds (~{jitter_seconds/60:.1f} min)")
             import time
 
             time.sleep(jitter_seconds)
+            logger.info("Jitter complete, starting alert processing...")
 
         # Process all alerts
         stats = self.alert_manager.process_all_alerts()
         logger.info(f"Alert processing completed: {stats}")
+        logger.info("=" * 60)
 
     def start(self):
         """Start the scheduler."""
